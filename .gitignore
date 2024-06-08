@@ -1,0 +1,8 @@
+.DS_Store
+node_modules
+*.log
+.vscode
+.eslintrc.js
+test-command.js
+.env
+dist
