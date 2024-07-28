@@ -4,13 +4,35 @@ This code is a fork of [DoseBot](https://github.com/dosebotredux/DosebotRedux). 
 
 Some of the text below is copied verbatim from DoseBot's README.md.
 
-## PsyAI
+---
 
 **PsyAI** is a harm reduction Discord bot, used to provide users with a variety of useful harm reduction information from [PsychonautWiki](https://www.psychonautwiki.org) and effect information from [Effect Index](https://www.effectindex.com).
 
-**Harm reduction** is the set of practical strategies and ideas at reducing negative consequences associated with substance use. Harm reduction is also a movement for social justice built on a belief in, and respect for, the rights of people who use substances - [Harm Reduction Coalition](http://harmreduction.org/about-us/principles-of-harm-reduction/).
+@here by popular demand, here's an explanation of how PsyAI works (credit goes to @saybecks for making the formatting all nice-like <3)
 
-The **drug abuse epidemic** that has been sweeping the the United States has cost 63,600 lives in 2016 alone [CDC](https://www.cdc.gov/nchs/products/databriefs/db294.htm), with a median age of 20. Every day PsyAI provides scientifically backed best practices to tens of thousands of users that helps save lives.
+# How does PsyAI work?
+PsyAI uses **retrieval-augmented generation** (RAG), a powerful technique that enhances my ability to provide *accurate* and *consistent* information. This approach combines the strengths of information retrieval and natural language generation to ensure that responses are both contextually relevant and factually correct. Here’s how it works and how it helps me answer questions referencing data from sources like PsychonautWiki (and others).
+## STEP 1: Information Retrieval
+When you ask a question, the first step involves **retrieving** relevant documents or pieces of information from a pre-existing database or context. This retrieval process ensures that the most **pertinent data** is selected based on the query. For instance, if you ask about the subjective effects of a particular psychoactive substance, I can pull detailed descriptions and data from a comprehensive database that includes:
+- user experiences, 
+- scientific research, and...  
+- harm reduction practices.
+## STEP 2: Natural Language Generation
+Once the relevant information is retrieved, the next step is to generate a coherent and contextually appropriate response. This involves synthesizing the retrieved data into a natural language format that is **easy to understand**. The generation process ensures that the response is not just a verbatim copy of the retrieved information but is tailored to answer the *specific* question effectively.
+## How PsyAI References PsychonautWiki Data
+When it comes to referencing data from sources like PsychonautWiki, the retrieval-augmented generation process allows me to pull specific details from the extensive content collection available. This includes:
+- scientific research, 
+- harm reduction practices, and 
+- subjective effects indexes. 
+By accessing this rich repository of information, I can provide detailed and accurate answers to your questions about psychoactive substances, their effects, and safe practices.
+## An Example
+For instance, if you were to ask about the effects of a particular hallucinogen, I could retrieve detailed descriptions from Tripsit.me, PiHKAL, etc. available in the database. I would then generate a response that incorporates this information, providing you with a comprehensive overview of the substance’s effects, potential risks, and harm reduction strategies.
+## Ensuring Accuracy Over Time
+The retrieval-augmented generation approach also allows for **continuous improvement**. As new information is added to the database, the retrieval process can access this updated data, ensuring that the responses remain **current and accurate**. This dynamic nature of RAG ensures that the information provided evolves with the latest scientific findings and user experiences.
+
+In summary, retrieval-augmented generation helps me produce accurate and consistent information by combining the strengths of information retrieval and natural language generation. This approach ensures that I can reference detailed and reliable data from sources like PsychonautWiki, providing you with well-informed and contextually relevant answers.
+
+:purple_heart:
 
 ## Message content restriction
 
