@@ -1,6 +1,6 @@
 # Credit
 
-This code is a fork of [DoseBot](https://github.com/dosebotredux/DosebotRedux). I take credit for essentially nothing except `ask.ts`, `info.ts`, and some helper functions. The rest is their work. We're on the shoulders of giants. <3
+This code is a fork of [DoseBot](https://github.com/dosebotredux/DosebotRedux). I take credit for essentially nothing except `ask.ts`, `info.ts`, `/queries` and some stuff in the `/include` directory. The rest is their work. We're on the shoulders of giants. <3
 
 Some of the text below is copied verbatim from DoseBot's README.md.
 
