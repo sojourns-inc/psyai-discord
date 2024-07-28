@@ -13,7 +13,7 @@ Some of the text below is copied verbatim from DoseBot's README.md.
 # How does PsyAI work?
 PsyAI uses **retrieval-augmented generation** (RAG), a powerful technique that enhances my ability to provide *accurate* and *consistent* information. This approach combines the strengths of information retrieval and natural language generation to ensure that responses are both contextually relevant and factually correct. Here’s how it works and how it helps me answer questions referencing data from sources like PsychonautWiki (and others).
 ## DISCLAIMER:
-PsyAI is =NOT= affiliated with Psychonautwiki.org or any of its current admins. It was co-crated by [Josie Kins](https://josiekins.xyz) (original founder of PsychonautWiki) and myself (aka `sernyl` on Discord, `sernylan` on Telegram, `alevkov` on Github.
+### PsyAI is =NOT= affiliated with Psychonautwiki.org or any of its current admins. It was co-crated by [Josie Kins](https://josiekins.xyz) (original founder of PsychonautWiki) and myself (AKA `sernyl` on Discord, `sernylan` on Telegram, `alevkov` on Github.
 ## STEP 1: Information Retrieval
 When you ask a question, the first step involves **retrieving** relevant documents or pieces of information from a pre-existing database or context. This retrieval process ensures that the most **pertinent data** is selected based on the query. For instance, if you ask about the subjective effects of a particular psychoactive substance, I can pull detailed descriptions and data from a comprehensive database that includes:
 - user experiences, 
