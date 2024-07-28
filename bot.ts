@@ -53,14 +53,54 @@ DiscordClient.on('guildCreate', guild => {
   console.log(`New server joined - Name: ${guild.id} ${guild.name} Members: ${guild.memberCount}`);
 });
 
-// DiscordClient.on('messageCreate', message => {
-//   try {
-//     CommandSystem.execute(DiscordClient, message);
-//   } catch (error) {
-//     console.error("caught error executing command", message, error);
-//   }
-// });
+DiscordClient.on('messageCreate', async (message: Discord.Message) => {
+  // Ignore messages from bots to prevent potential loops
+  if (message.author.bot) return;
 
+  const clientUser = DiscordClient.user;
+  if (!clientUser) {
+    console.warn('Received message before client user was initialized');
+    return;
+  }
+
+  // Check if the message starts with a mention of PsyAI
+  const botMention = `<@${clientUser.id}>`;
+  if (message.content.startsWith(botMention)) {
+    // Extract the query by removing the mention and any leading/trailing whitespace
+    const query = message.content.slice(botMention.length).trim();
+
+    if (query) {
+      try {
+        // Create a fake interaction object
+        const fakeInteraction = {
+          commandName: 'ask',
+          options: {
+            getString: (name: string) => name === 'query' ? query : null,
+          },
+          user: message.author,
+          guild: message.guild,
+          channel: message.channel,
+          reply: async (content: string | { content: string, ephemeral: boolean }) => {
+            if (typeof content === 'string') {
+              await message.reply(content);
+            } else {
+              await message.reply(content.content);
+            }
+          },
+          deferReply: async () => message.channel.sendTyping(),
+          editReply: message.reply.bind(message),
+          followUp: message.reply.bind(message),
+        } as unknown as Discord.CommandInteraction;
+
+        // Call existing /ask command handler
+        CommandSystem.executeCommandInteraction(fakeInteraction);
+      } catch (error) {
+        console.error("Error handling mention query", error);
+        await message.reply("Sorry, I encountered an error while processing your request.");
+      }
+    }
+  }
+});
 DiscordClient.on('interactionCreate', async (interaction: Discord.Interaction) => {
   if (interaction.isButton() && interaction.customId === 'agree_disclaimer') {
     await updateUserDisclaimerStatus(interaction.user.id, true);

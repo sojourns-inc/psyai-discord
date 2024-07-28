@@ -25,6 +25,8 @@ export function splitTextIntoSections(text) {
 
 export function constants(name) {
   switch (name) {
+    case "DISCLAIMER":
+      return " [ [Disclaimer](https://publish.obsidian.md/psyai/Projects/PsyAI/Legal/Disclaimer) || [Source Code](https://github.com/sojourns-inc/psyai) ] ";
     case "SORRY_PROMPT":
       return "Sorry, I couldn't fetch the prompt ID. Please try again later.";
     case "SORRY_RESPONSE":

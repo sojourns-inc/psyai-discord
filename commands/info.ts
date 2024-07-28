@@ -79,7 +79,7 @@ const postAndParseURL = async (url: string, payload: any) => {
 }
 
 
-async function fetchQuestionFromPsyAI(question: string, model: string = 'openai', temperature: number = 0.2, tokens: number = 3000): Promise<Response | null> {
+async function fetchQuestionFromPsyAI(question: string, model = 'openai', temperature = 0.2, tokens = 3000): Promise<Response | null> {
   try {
     const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens };
     console.log(raw);
@@ -129,7 +129,7 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
     if (!user_disclaimer) {
-      await interaction.reply(constants("SORRY_NOTSORRY"));;
+      await interaction.reply(constants("SORRY_NOTSORRY"));
       return;
     }
 
@@ -182,9 +182,9 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       .setColor('#5921CF')
       .setAuthor({ name: 'PsyAI' })
       .setTitle(substanceNameCap)
+      .setDescription(constants("DISCLAIMER"))
       .setTimestamp()
       .setURL('https://sojourns.io')
-      .setFooter({ text: constants("DISCLAIMER_DUMB") });
 
     // Create two arrays, one for each column
     const leftColumn = [];

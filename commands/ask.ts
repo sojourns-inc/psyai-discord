@@ -12,6 +12,8 @@ const askCommandRateLimiter = defaultRateLimiter;
 askCommandRateLimiter.setGuildConfig('179641883222474752', { enabled: true, cooldownTime: 5 });
 askCommandRateLimiter.setGuildConfig('1009038673284714526', { enabled: true, cooldownTime: 5 });
 askCommandRateLimiter.setGuildConfig('867876356304666635', { enabled: true, cooldownTime: 5 });
+askCommandRateLimiter.setGuildConfig('1163815737790578759', { enabled: true, cooldownTime: 5 });
+askCommandRateLimiter.setGuildConfig('1037189729294225518', { enabled: true, cooldownTime: 5 });
 
 const postAndParseURL = async (url: string, payload: any) => {
   try {
@@ -175,16 +177,16 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       .setColor('#5921CF')
       .setAuthor({ name: 'PsyAI' })
       .setTitle(truncatedQuery)
+      .setDescription(constants("DISCLAIMER"))
       .setTimestamp()
       .setURL('https://sojourns.io')
-      .setFooter({ text: constants("DISCLAIMER_DUMB") });
 
     // Splitting the assistant text into sections
     const assistantTextSections = splitTextIntoSections(dataQuestion.assistant);
 
     // Create and add fields to the embed
     await createEmbedFields(embed, assistantTextSections);
-    
+
     await interaction.followUp({ embeds: [embed] });
   } catch (error) {
     console.error(`Error in performInteraction: ${error}`);
