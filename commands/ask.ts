@@ -3,8 +3,15 @@ import Discord from 'discord.js';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
+import { defaultRateLimiter } from '../include/limiter';
 import { getUserAssociation, getUserDisclaimerStatus } from '../queries/supabase';
-import { splitTextIntoParagraphs, constants, betaGuilds, splitTextIntoSections } from '../include/helpers';
+import { constants, betaGuilds, splitTextIntoSections } from '../include/helpers';
+
+const askCommandRateLimiter = defaultRateLimiter;
+
+askCommandRateLimiter.setGuildConfig('179641883222474752', { enabled: true, cooldownTime: 5 });
+askCommandRateLimiter.setGuildConfig('1009038673284714526', { enabled: true, cooldownTime: 5 });
+askCommandRateLimiter.setGuildConfig('867876356304666635', { enabled: true, cooldownTime: 5 });
 
 const postAndParseURL = async (url: string, payload: any) => {
   try {
@@ -23,7 +30,7 @@ const postAndParseURL = async (url: string, payload: any) => {
   }
 }
 
-async function fetchQuestionFromPsyAI(question: string, model: string = 'openai', temperature: number = 0.2, tokens: number = 3000): Promise<Response | null> {
+async function fetchQuestionFromPsyAI(question: string, model = 'openai', temperature = 0.2, tokens = 3000): Promise<Response | null> {
   try {
     const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens };
     console.log(raw);
@@ -44,7 +51,7 @@ export const applicationCommandData = new SlashCommandBuilder()
     .setRequired(true))
   .toJSON() as unknown as Discord.ApplicationCommandData;
 
-// Function to split long sections into smaller chunks
+// split long sections into smaller chunks
 function splitSection(section, maxLength) {
   const chunks = [];
   let currentChunk = '';
@@ -80,19 +87,15 @@ async function createEmbedFields(embed, assistantTextSections) {
             embed.addFields([{ name: fieldTitle, value: fieldValue }]);
           } catch (error) {
             console.error(`Error adding field "${fieldTitle}": ${error}`);
-            // Handle the error for the specific field
-            // You can choose to skip the field or take any other appropriate action
           }
         }
       }
     }
 
-    // Add the contact information field
     try {
       embed.addFields([{ name: 'Contact', value: 'Email: `0@sernyl.dev` // Discord: `sernyl`' }]);
     } catch (error) {
       console.error(`Error adding contact information field: ${error}`);
-      // Handle the error for the contact information field
     }
   } catch (error) {
     console.error(`Error creating embed fields: ${error}`);
@@ -100,15 +103,20 @@ async function createEmbedFields(embed, assistantTextSections) {
   }
 }
 export async function performInteraction(interaction: Discord.CommandInteraction) {
-  try {
+  if (!interaction.guild) {
+    await interaction.reply("This command can only be used in a guild.");
+    return;
+  }
 
+  try {
     const discordUserId = interaction.user.id;
-    const special = discordUserId === process.env.SPECIAL_DISCORD_ID;
+    const guildId = interaction.guild.id;
+    const special = [process.env.SPECIAL_DISCORD_ID].includes(discordUserId);
     const user_association = await getUserAssociation(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
     if (!user_disclaimer) {
-      await interaction.reply(constants("SORRY_NOTSORRY"));;
+      await interaction.reply(constants("SORRY_NOTSORRY"));
       return;
     }
 
@@ -139,33 +147,15 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       return;
     }
 
-    /* Disabling subscriptions for now
-    if (interaction.guild != null && (interaction.guild.id == "1032772277223297085" || interaction.guild.id == "1037189729294225518" || interaction.guild.id == "1163815737790578759")) {
-      console.log("Guild ID: " + interaction.guild.id);
-      console.log("Guild Name: " + interaction.guild.name);
-      console.log("Guild Owner ID: " + interaction.user.id);
-      console.log("Guild Owner ID: " + interaction.user.tag);
-      console.log("Guild Owner ID: " + interaction.user.username);
-      // The Culture Cave or Josie's Guild
-    } else if ((!user_association.subscription_status && user_association.trial_prompts > 0)) {
-      // Decrease the trial_prompts by 1
-      const { error } = await supabase
-        .from('user_association')
-        .update({ trial_prompts: user_association.trial_prompts - 1 })
-        .eq('discord_id', discordUserId);
-
-      if (error) {
-        console.error(error);
-        // Handle the error (consider sending a message to the user)
-      }
-    } else if (!user_association.subscription_status && user_association.trial_prompts <= 0) {
-      // Send the subscription message because the user is out of trial_prompts
-      const paymentUrl = await startSubscription(discordUserId);
-      await interaction.user.send(`Hi there, friend!\n\nYour trial has ended.\n\nSupport the devs today, for only $12.40 per YEAR!  ૮₍ ˶ᵔ ᵕᵔ˶₎ა  >[Subscribe Now](${paymentUrl})<`);
-      await interaction.editReply("Please check your direct messages!");
+    if (askCommandRateLimiter.isRateLimited(guildId, discordUserId)) {
+      console.log(`User ${discordUserId} is rate limited`);
+      const remainingCooldown = askCommandRateLimiter.getRemainingCooldown(guildId, discordUserId);
+      await interaction.reply({
+        content: `You're using this command too quickly. Please wait ${remainingCooldown} seconds before trying again.`,
+        ephemeral: true
+      });
       return;
     }
-    */
     // Capture messages posted to a given channel and remove all symbols and put everything into lower case
     const query = interaction.options.getString("query", true);
     console.log(`Requesting info for ${query}`);
@@ -179,7 +169,7 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       return;
     }
 
-    const truncatedQuery = query.length > 300 ? query.substring(0, 297) + "..." : query;
+    const truncatedQuery = query.length > 500 ? query.substring(0, 497) + "..." : query;
 
     const embed = new EmbedBuilder()
       .setColor('#5921CF')
@@ -194,8 +184,7 @@ export async function performInteraction(interaction: Discord.CommandInteraction
 
     // Create and add fields to the embed
     await createEmbedFields(embed, assistantTextSections);
-
-    // Edit the reply with the embed
+    
     await interaction.followUp({ embeds: [embed] });
   } catch (error) {
     console.error(`Error in performInteraction: ${error}`);
