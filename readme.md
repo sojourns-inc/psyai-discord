@@ -49,26 +49,6 @@ Beginning September 1, 2022, Discord has restricted access to message content fo
 - Tolerance calculators
 - And more! Say `--help` for the full command list.
 
-## Contributors
-
-This project is maintained by members of the [sojourns inc. organization](https://github.com/sojourns-inc) on Github.
-
-## Usage
-
-1.  Clone repo
-2.  `$ npm install` to download dependencies
-3.  `$ npx tsc` to compile
-4.  `DISCORD_API_TOKEN=xxx npx node ./dist/bot.js` to start bot
-
-## Docker usage
-
-1.  Clone repo
-2.  Create a `.env` file like so:
-```env
-DISCORD_TOKEN="your token goes here"
-```
-3.  `./start.sh` to build the container and start bot
-
 ### In memoriam
 
 DoseBot is a separate project, and is maintained in memory of Cocoa, 1995 - 2019. Cocoa was the creator of the original DoseBot. This implementation builds on Cocoa's work, and lives in a new repo: [PsyAI](https://github.com/sojourns-inc/PsyAI).
