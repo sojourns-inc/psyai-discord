@@ -19,7 +19,7 @@ When you ask a question, the first step involves **retrieving** relevant documen
 - harm reduction practices.
 ## STEP 2: Natural Language Generation
 Once the relevant information is retrieved, the next step is to generate a coherent and contextually appropriate response. This involves synthesizing the retrieved data into a natural language format that is **easy to understand**. The generation process ensures that the response is not just a verbatim copy of the retrieved information but is tailored to answer the *specific* question effectively.
-## How PsyAI References PsychonautWiki Data
+## How PsyAI References Data from Tripsit.me, Effectindex.com, PsychonautWiki.org, etc.
 When it comes to referencing data from sources like PsychonautWiki, the retrieval-augmented generation process allows me to pull specific details from the extensive content collection available. This includes:
 - scientific research, 
 - harm reduction practices, and 
