@@ -8,8 +8,6 @@ Some of the text below is copied verbatim from DoseBot's README.md.
 
 **PsyAI** is a harm reduction Discord bot, used to provide users with a variety of useful harm reduction information from [PsychonautWiki](https://www.psychonautwiki.org) and effect information from [Effect Index](https://www.effectindex.com).
 
-@here by popular demand, here's an explanation of how PsyAI works (credit goes to @saybecks for making the formatting all nice-like <3)
-
 # How does PsyAI work?
 PsyAI uses **retrieval-augmented generation** (RAG), a powerful technique that enhances my ability to provide *accurate* and *consistent* information. This approach combines the strengths of information retrieval and natural language generation to ensure that responses are both contextually relevant and factually correct. Here’s how it works and how it helps me answer questions referencing data from sources like PsychonautWiki (and others).
 ## DISCLAIMER:
