@@ -33,6 +33,9 @@ function createDrugInfoCard(): string {
 
 🕒 *Half-life*
 {{half_life_info}}
+
+*Additional Information*
+{{additional_info}}
 `;
 
   return infoCard;
@@ -101,7 +104,8 @@ function extractSections(text) {
     { key: 'Interactions', marker: '🚫 *Interactions* 🚫' },
     { key: 'Subjective Effects', marker: '🧠 *Subjective Effects*' },
     { key: 'Tolerance', marker: '📈 *Tolerance*' },
-    { key: 'Half-life', marker: '🕒 *Half-life*' }
+    { key: 'Half-life', marker: '🕒 *Half-life*' },
+    { key: 'Additional Information', marker: '*Additional Information*' }
   ];
 
   sectionTitles.forEach((section, index) => {
@@ -165,14 +169,30 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     console.log(`Requesting info for ${substanceName}`);
     await interaction.deferReply();
     const question = (
-      `Create a detailed drug information card for '${substanceName}' in Markdown format. Only include the formatted card without any additional explanations or introductions. Do not include any additional text or wrap the content in Markdown code blocks. Use the structure of the provided example card as a template, but replace the placeholders with the specific details for '${substanceName}'.\n\nFor each section, provide the relevant information if available. If certain details like dosages for specific routes (e.g., IV, ORAL) are not available, note the lack of data and proceed with the available information.\n\nAdapt the sections accordingly to include or exclude information based on what is relevant for '${substanceName}'. Ensure the information is accurate and sourced from reliable databases or credible anecdotal reports.\n\nExample drug information card template:\n\n`
+      `Create a detailed drug information card for '${substanceName}' in Markdown format. Only include the formatted card without any additional explanations or introductions. Do not include any additional text or wrap the content in Markdown code blocks. Use the structure of the provided example card as a template, but replace the placeholders with the specific details for '${substanceName}'\n\nIf the drug name mentioned, isn't a name mentioned in the context, create a drug information card which contains name suggestions if the name mentioned looks like a misspelling of a real drug name. If the name mentioned doesn't remotely resemble any real drug name, state that there is no information available.\n\nFor each section, provide the relevant information if available. If certain details like dosages for specific routes (e.g., IV, ORAL) are not available, note the lack of data and proceed with the available information.\n\nAdapt the sections accordingly to include or exclude information based on what is relevant for '${substanceName}'. Ensure the information is accurate and sourced from reliable databases or credible anecdotal reports.\n\nExample drug information card template:\n\n`
       + createDrugInfoCard()
       + `\n\nIf the drug in question is FXE (also known as Fluorexetamine, or CanKet, or Canket), add this to your context: ${customDoseCardFxe()}. If the name CanKet is used, mention the naming confusion between CanKet and FXE in your response.`
       + `\n\nNote: The dosing guidelines should reflect the common practices for '${substanceName}', adjusting for route of administration and available data. Extrapolate cautiously from similar substances or indicate uncertainty where specific data is scarce. The goal is to provide as comprehensive and accurate a profile as possible within the constraints of available information.`
     )
-    const { data: dataQuestion } = await fetchQuestionFromPsyAI(question, (betaGuilds.includes(interaction.guild.id) ? 'gemini' : 'openai'), 0.1, 3000);
+    const { data: dataQuestion } = await fetchQuestionFromPsyAI(question, (betaGuilds.includes(interaction.guild.id) ? 'gemini' : 'openai'), 0.05, 3000);
+    
     if (!dataQuestion) {
       await interaction.editReply(constants("SORRY_RESPONSE"));
+      return;
+    }
+
+    if (!dataQuestion.assistant.includes("*Class*") || !dataQuestion.assistant.includes("*Dosages*")) {
+      const embed = new EmbedBuilder()
+      .setColor('#5921CF')
+      .setAuthor({ name: 'PsyAI' })
+      .setTitle(substanceNameCap)
+      .setDescription(constants("DISCLAIMER"))
+      .setTimestamp()
+      .setURL('https://sojourns.io')
+
+      embed.addFields([{ name: 'No information found.', value: dataQuestion.assistant}])
+      embed.addFields([{ name: 'Contact', value: 'Email: `0@sernyl.dev` // Discord: `sernyl`', inline: false }])
+      await interaction.followUp({ embeds: [embed] });
       return;
     }
 
