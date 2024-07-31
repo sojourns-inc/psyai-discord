@@ -5,7 +5,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
 import { defaultRateLimiter } from '../include/limiter';
 import { getUserAssociation, getUserDisclaimerStatus } from '../queries/supabase';
-import { constants, betaGuilds, splitTextIntoSections } from '../include/helpers';
+import { constants, betaGuilds, splitTextIntoSections, bannedUsers } from '../include/helpers';
 
 const askCommandRateLimiter = defaultRateLimiter;
 
@@ -117,6 +117,11 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     const user_association = await getUserAssociation(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
+    if (bannedUsers.includes(discordUserId)) { 
+      await interaction.reply("I'm sorry; you are access has been restricted. You probably asked me something naughty, e.g. 'How to make meth?'.\n\nPlease contact my creator (@sernyl) for more information.");
+      return;
+    }
+
     if (!user_disclaimer) {
       await interaction.reply(constants("SORRY_NOTSORRY"));
       return;
@@ -132,7 +137,7 @@ export async function performInteraction(interaction: Discord.CommandInteraction
         .addComponents(agreeButton);
 
       await interaction.reply({
-        content: 'Please read and agree to the disclaimer before using the bot:\n\nhttps://publish.obsidian.md/psyai/Projects/PsyAI/Legal/Disclaimer',
+        content: 'Please use either `/ask` or the `/info` command to read and agree to the disclaimer, before using the bot:\n\nhttps://publish.obsidian.md/psyai/Projects/PsyAI/Legal/Disclaimer',
         components: [row],
         ephemeral: true
       });

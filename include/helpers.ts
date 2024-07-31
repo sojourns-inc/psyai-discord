@@ -44,6 +44,10 @@ export const betaGuilds = [
 
 ]
 
+export const bannedUsers = [
+  //'1217908404274855946'
+]
+
 
 export function TemplatedMessageEmbed() {
   throw new Error('Function not implemented.');

@@ -3,7 +3,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('
 import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
 import { getUserAssociation, getUserDisclaimerStatus } from '../queries/supabase.js';
-import { constants, betaGuilds } from '../include/helpers';
+import { constants, betaGuilds, bannedUsers } from '../include/helpers';
 
 function createDrugInfoCard(): string {
   const infoCard = `
@@ -131,6 +131,11 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     const discordUserId = interaction.user.id;
     const user_association = await getUserAssociation(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
+
+    if (bannedUsers.includes(discordUserId)) { 
+      await interaction.reply("I'm sorry; you are access has been restricted. You probably asked me something naughty, e.g. 'How to make meth?'.\n\nPlease contact my creator (@sernyl) for more information.");
+      return;
+    }
 
     if (!user_disclaimer) {
       await interaction.reply(constants("SORRY_NOTSORRY"));
