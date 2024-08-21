@@ -122,7 +122,7 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       return;
     }
     const wot = interaction.options.getString("query", true);
-    if (wot.toLowerCase().includes("##thanks")) {
+    if (wot.toLowerCase().includes("## thanks")) {
       await interaction.reply(wot);
       return;
     }
