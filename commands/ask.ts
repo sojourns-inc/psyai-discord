@@ -121,6 +121,12 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       await interaction.reply("I'm sorry; you are access has been restricted. You probably asked me something naughty, e.g. 'How to make meth?'.\n\nPlease contact my creator (@sernyl) for more information.");
       return;
     }
+    const query = interaction.options.getString("query", true);
+    if (query.toLowerCase().includes("##thanks")) {
+      await interaction.reply(query);
+      return;
+    }
+    
 
     if (!user_disclaimer) {
       await interaction.reply(constants("SORRY_NOTSORRY"));
