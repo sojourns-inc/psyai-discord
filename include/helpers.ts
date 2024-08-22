@@ -48,6 +48,17 @@ export const bannedUsers = [
   //'1217908404274855946'
 ]
 
+export const calcDowntime = () => {
+  const futureDate: Date = new Date(2024, 7, 24, 0, 0); // Note: month is 0-indexed in JavaScript
+  const now: Date = new Date();
+  const difference: number = futureDate.getTime() - now.getTime();
+  const totalSeconds: number = Math.floor(difference / 1000);
+
+  const hours: number = Math.floor(totalSeconds / 3600);
+  const minutes: number = Math.floor((totalSeconds % 3600) / 60);
+
+  return `${hours} hours and ${minutes} minutes`;
+}
 
 export function TemplatedMessageEmbed() {
   throw new Error('Function not implemented.');

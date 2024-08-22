@@ -5,7 +5,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
 import { defaultRateLimiter } from '../include/limiter';
 import { getUserAssociation, getUserDisclaimerStatus } from '../queries/supabase';
-import { constants, betaGuilds, splitTextIntoSections, bannedUsers } from '../include/helpers';
+import { constants, betaGuilds, splitTextIntoSections, bannedUsers, calcDowntime } from '../include/helpers';
 
 const askCommandRateLimiter = defaultRateLimiter;
 
@@ -121,6 +121,12 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       await interaction.reply("I'm sorry; you are access has been restricted. You probably asked me something naughty, e.g. 'How to make meth?'.\n\nPlease contact my creator (@sernyl) for more information.");
       return;
     }
+ 
+    if (calcDowntime()) {
+      await interaction.reply(`Dude, I am **way** too high to answer questions right now ᎧᏇᎧ.\n\nJust kidding -- I'm actually undergoing routine maintenance.  Estimated time: ${calcDowntime()}.`);
+      return;
+    }
+    
 
     if (!user_disclaimer) {
       await interaction.reply(constants("SORRY_NOTSORRY"));
