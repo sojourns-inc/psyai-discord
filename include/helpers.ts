@@ -49,7 +49,7 @@ export const bannedUsers = [
 ]
 
 export const calcDowntime = () => {
-  const futureDate: Date = new Date(2024, 7, 24, 0, 0); // Note: month is 0-indexed in JavaScript
+  const futureDate: Date = new Date(2024, 7, 24, 5, 0); // Note: month is 0-indexed in JavaScript
   const now: Date = new Date();
   const difference: number = futureDate.getTime() - now.getTime();
   const totalSeconds: number = Math.floor(difference / 1000);
