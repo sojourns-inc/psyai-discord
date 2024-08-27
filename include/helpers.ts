@@ -57,7 +57,7 @@ export const calcDowntime = () => {
   const hours: number = Math.floor(totalSeconds / 3600);
   const minutes: number = Math.floor((totalSeconds % 3600) / 60);
 
-  return `${hours} hours and ${minutes} minutes`;
+  return false;
 }
 
 export function TemplatedMessageEmbed() {

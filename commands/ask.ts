@@ -34,9 +34,9 @@ const postAndParseURL = async (url: string, payload: any) => {
 
 async function fetchQuestionFromPsyAI(question: string, model = 'openai', temperature = 0.2, tokens = 3000): Promise<Response | null> {
   try {
-    const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens };
+    const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens, model: "openai", version: "v2" };
     console.log(raw);
-    return await postAndParseURL(`${process.env.BASE_URL_BETA}/prompt?model=${model}`, raw);
+    return await postAndParseURL(`${process.env.BASE_URL_BETA}/q`, raw);
   } catch (error) {
     console.error(`Error in fetchQuestionFromPsyAI: ${error}`);
     return null;
@@ -117,16 +117,16 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     const user_association = await getUserAssociation(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
-    if (bannedUsers.includes(discordUserId)) { 
+    if (bannedUsers.includes(discordUserId)) {
       await interaction.reply("I'm sorry; you are access has been restricted. You probably asked me something naughty, e.g. 'How to make meth?'.\n\nPlease contact my creator (@sernyl) for more information.");
       return;
     }
- 
+
     if (calcDowntime()) {
       await interaction.reply(`Dude, I am **way** too high to answer questions right now ᎧᏇᎧ.\n\nJust kidding -- I'm actually undergoing routine maintenance.  Estimated time: ${calcDowntime()}.`);
       return;
     }
-    
+
 
     if (!user_disclaimer) {
       await interaction.reply(constants("SORRY_NOTSORRY"));
@@ -174,6 +174,20 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     console.log(`Requesting info for ${query}`);
     await interaction.deferReply();
 
+    if (query.startsWith("!bluelight")) {
+      const { data: searchQuestion } = await fetchQuestionFromPsyAI(query, 'openai', 0.3, 3000);
+
+      searchQuestion.assistant = searchQuestion.assistant.replaceAll('\n\n', '\n');
+      let truncatedAnswer = searchQuestion.assistant.length > 1750 ? searchQuestion.assistant.substring(0, 1747) + "..." : searchQuestion.assistant;
+      truncatedAnswer = "## ```  Q: " + query.replace("!bluelight ", "") + "```" + "\n\n" + truncatedAnswer;
+      // await interaction.followUp({content: truncatedAnswer});
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(truncatedAnswer);
+      } else {
+        await interaction.reply(truncatedAnswer);
+      }
+      return;
+    }
     const question = `Check your context, and find out: ${query}\n\n(Please respond ${(special ? process.env.SPECIAL_ASK_INST : 'directly')} to the question.)`
     //const question = query + " " + (betaGuilds.includes(interaction.guild.id) ? "(please give an elaborate, detailed and lengthy response)." : "")
     const { data: dataQuestion } = await fetchQuestionFromPsyAI(question, (betaGuilds.includes(interaction.guild.id) ? 'gemini' : 'openai'), 0.3, 3000);
