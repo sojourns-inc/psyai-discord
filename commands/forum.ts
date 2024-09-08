@@ -5,7 +5,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
 import { defaultRateLimiter } from '../include/limiter';
 import { getUserDisclaimerStatus } from '../queries/supabase';
-import { constants, betaGuilds, splitTextIntoSections, bannedUsers, calcDowntime } from '../include/helpers';
+import { constants, splitTextIntoSections, bannedUsers, calcDowntime } from '../include/helpers';
 
 const askCommandRateLimiter = defaultRateLimiter;
 
@@ -45,11 +45,11 @@ async function fetchQuestionFromPsyAI(question: string, model = 'openai', temper
 
 
 export const applicationCommandData = new SlashCommandBuilder()
-  .setName("ask")
-  .setDescription("Ask me anything drug-related.")
+  .setName("forum")
+  .setDescription("Search the Bluelight.org forum.")
   .addStringOption(option => option
-    .setName("query")
-    .setDescription("The question you'd like to ask")
+    .setName("keyword")
+    .setDescription("Search keywords")
     .setRequired(true))
   .toJSON() as unknown as Discord.ApplicationCommandData;
 
@@ -82,7 +82,7 @@ async function createEmbedFields(embed, assistantTextSections) {
         const sectionChunks = splitSection(sectionContent, 1024);
 
         for (const [chunkIndex, chunk] of sectionChunks.entries()) {
-          const fieldTitle = chunkIndex === 0 ? '\u200B' : '\u200B';
+          const fieldTitle = chunkIndex === 0 ? '\u200B' : ' \u200B';
           const fieldValue = chunk.length > 1024 ? chunk.slice(0, 1021) + '...' : chunk;
 
           try {
@@ -113,7 +113,6 @@ export async function performInteraction(interaction: Discord.CommandInteraction
   try {
     const discordUserId = interaction.user.id;
     const guildId = interaction.guild.id;
-    const special = [process.env.SPECIAL_DISCORD_ID].includes(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
     if (bannedUsers.includes(discordUserId)) {
@@ -155,10 +154,6 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       return;
     }
 
-    // if (!user_association) {
-    //   return;
-    // }
-
     if (askCommandRateLimiter.isRateLimited(guildId, discordUserId)) {
       console.log(`User ${discordUserId} is rate limited`);
       const remainingCooldown = askCommandRateLimiter.getRemainingCooldown(guildId, discordUserId);
@@ -169,48 +164,35 @@ export async function performInteraction(interaction: Discord.CommandInteraction
       return;
     }
     // Capture messages posted to a given channel and remove all symbols and put everything into lower case
-    const query = interaction.options.getString("query", true);
+    const query = interaction.options.getString("keyword", true);
     console.log(`Requesting info for ${query}`);
     await interaction.deferReply();
 
-    if (query.startsWith("!bluelight")) {
-      const { data: searchQuestion } = await fetchQuestionFromPsyAI(query, 'openai', 0.3, 3000);
 
-      searchQuestion.assistant = searchQuestion.assistant.replaceAll('\n\n', '\n');
-      let truncatedAnswer = searchQuestion.assistant.length > 1750 ? searchQuestion.assistant.substring(0, 1747) + "..." : searchQuestion.assistant;
-      truncatedAnswer = "## ```  Q: " + query.replace("!bluelight ", "") + "```" + "\n\n" + truncatedAnswer;
-      // await interaction.followUp({content: truncatedAnswer});
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply(truncatedAnswer);
-      } else {
-        await interaction.reply(truncatedAnswer);
-      }
-      return;
-    }
-    const question = `${query}\n\n(Please respond ${(special ? process.env.SPECIAL_ASK_INST : 'directly')} to the question.)`
-    //const question = query + " " + (betaGuilds.includes(interaction.guild.id) ? "(please give an elaborate, detailed and lengthy response)." : "")
-    const { data: dataQuestion } = await fetchQuestionFromPsyAI(question, (betaGuilds.includes(interaction.guild.id) ? 'gemini' : 'openai'), 0.3, 3000);
-    if (!dataQuestion) {
-      await interaction.editReply(constants("SORRY_RESPONSE"));
-      return;
-    }
+    const { data: searchQuestion } = await fetchQuestionFromPsyAI("!bluelight " + query, 'openai', 0.3, 3000);
 
-    const truncatedQuery = query.length > 500 ? query.substring(0, 497) + "..." : query;
+    searchQuestion.assistant = "> " + searchQuestion.assistant.replaceAll('\n\n', '\n> ').slice(0, -2);
+    // await interaction.followUp({content: truncatedAnswer});
 
     const embed = new EmbedBuilder()
       .setColor('#5921CF')
-      .setAuthor({ name: 'PsyAI' })
-      .setTitle(truncatedQuery)
-      .setDescription(constants("DISCLAIMER"))
+      .setAuthor({ name: 'Bluelight.org -- Forum Search' })
+      .setTitle("Q: "+query)
+      // .setDescription(constants("DISCLAIMER"))
       .setTimestamp()
       .setURL('https://sojourns.io')
 
     // Splitting the assistant text into sections
-    const assistantTextSections = splitTextIntoSections(dataQuestion.assistant);
+    const assistantTextSections = splitTextIntoSections(searchQuestion.assistant, true);
 
     // Create and add fields to the embed
     await createEmbedFields(embed, assistantTextSections);
 
+    // if (interaction.deferred || interaction.replied) {
+    //   await interaction.editReply(truncatedAnswer);
+    // } else {
+    //   await interaction.reply(truncatedAnswer);
+    // }
     await interaction.followUp({ embeds: [embed] });
   } catch (error) {
     console.error(`Error in performInteraction: ${error}`);

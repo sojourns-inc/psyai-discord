@@ -2,8 +2,8 @@ import Discord from 'discord.js';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 import { SlashCommandBuilder } from "@discordjs/builders";
 import rp from 'request-promise';
-import { getUserAssociation, getUserDisclaimerStatus } from '../queries/supabase.js';
-import { constants, betaGuilds, bannedUsers, calcDowntime } from '../include/helpers';
+import { getUserDisclaimerStatus } from '../queries/supabase.js';
+import { constants, bannedUsers, calcDowntime } from '../include/helpers';
 
 
 const postAndParseURL = async (url: string, payload: any) => {
@@ -23,9 +23,9 @@ const postAndParseURL = async (url: string, payload: any) => {
   }
 }
 
-async function fetchQuestionFromPsyAI(question: string, model = 'openai', temperature = 0.35, tokens = 3000): Promise<Response | null> {
+async function fetchQuestionFromPsyAI(question: string, model = 'openai', temperature = 0.0, tokens = 3000): Promise<Response | null> {
   try {
-    const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens, drug: true, format: "json", model: "openai", "version": "v2" };
+    const raw: PsyAIOptions = model === 'gemini' ? { question } : { question, temperature, tokens, drug: true, format: "pyd", model: "openai", "version": "v2" };
     console.log(raw);
     return await postAndParseURL(`${process.env.BASE_URL_BETA}/q`, raw);
   } catch (error) {
@@ -36,14 +36,14 @@ async function fetchQuestionFromPsyAI(question: string, model = 'openai', temper
 
 interface DrugInfo {
   drug_name: string;
-  search_url: string;
-  chemical_class: string;
-  psychoactive_class: string;
-  dosages: {
-    routes_of_administration: Array<{
-      route: string;
-      units: string;
-      dose_ranges: {
+  search_url?: string;
+  chemical_class?: string;
+  psychoactive_class?: string;
+  dosages?: {
+    routes_of_administration?: Array<{
+      route?: string;
+      units?: string;
+      dose_ranges?: {
         threshold?: string;
         light?: string;
         common?: string;
@@ -52,29 +52,29 @@ interface DrugInfo {
       };
     }>;
   };
-  duration: {
-    total_duration: string;
-    onset: string;
-    peak: string;
-    offset: string;
-    after_effects: string;
+  duration?: {
+    total_duration?: string;
+    onset?: string;
+    peak?: string;
+    offset?: string;
+    after_effects?: string;
   };
-  addiction_potential: string;
-  interactions: {
-    dangerous: string[];
-    unsafe: string[];
-    caution: string[];
+  addiction_potential?: string;
+  interactions?: {
+    dangerous?: string[];
+    unsafe?: string[];
+    caution?: string[];
   };
-  notes: string;
-  subjective_effects: string[];
-  tolerance: {
-    full_tolerance: string;
-    half_tolerance: string;
-    zero_tolerance: string;
-    cross_tolerances: string[];
+  notes?: string;
+  subjective_effects?: string[];
+  tolerance?: {
+    full_tolerance?: string;
+    half_tolerance?: string;
+    zero_tolerance?: string;
+    cross_tolerances?: string[];
   };
-  half_life: string;
-  trip_reports: string;
+  half_life?: string;
+  trip_reports?: string;
 }
 
 export async function createOptimizedDrugInfoEmbed(interaction: Discord.CommandInteraction, substanceName: string) {
@@ -82,29 +82,80 @@ export async function createOptimizedDrugInfoEmbed(interaction: Discord.CommandI
     const { data: drugInfo } = await fetchQuestionFromPsyAI(substanceName);
     const info: DrugInfo = drugInfo.assistant;
 
+    console.log(info)
+
     const embed = new EmbedBuilder()
       .setColor('#7721CF')
-
       .setTitle(`🧪 ${info.drug_name}`)
-
+      .setURL(info.search_url)
       .addFields(
         { name: '🔬 Chemical Class', value: info.chemical_class, inline: true },
         { name: '🧠 Psychoactive Class', value: info.psychoactive_class, inline: true },
         { name: '⚠️ Addiction Potential', value: info.addiction_potential, inline: false },
-        ...createDosageFields(info),
-        ...createDurationFields(info),
-        ...createInteractionFields(info),
-        { name: '🌈 Subjective Effects', value: '> ' + info.subjective_effects.join('\n> '), inline: true },
-        ...createToleranceFields(info),
+      );
 
-      )
-      .setFooter({ text: 'Data provided by PsyAI - Use responsibly' })
-      .setTimestamp();
+    // Add dosage information
+    !!info.dosages && !!info.dosages.routes_of_administration && info.dosages.routes_of_administration.forEach(route => {
+      let doseInfo = ``;
+      Object.entries(route.dose_ranges ?? {}).forEach(([range, dose]) => {
+        if (dose) {
+          doseInfo += `> **${range.charAt(0).toUpperCase() + range.slice(1)}:** ${dose}\n`;
+        }
+      });
+      embed.addFields({ name: `⚖️ Dosage (${route.route})`, value: doseInfo, inline: true });
+    });
 
+    // Add duration information
+    if (info.duration !== null) {
+      let durationInfo = '';
+      Object.entries(info.duration ?? {}).forEach(([key, value]) => {
+        if (value) {
+          durationInfo += `**${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${value}\n`;
+        }
+      });
+      embed.addFields({ name: '⏱️ Duration', value: durationInfo, inline: false });
+    }
+
+    
+
+    // Add interaction information
+    Object.entries(info.interactions ?? []).forEach(([key, value]) => {
+      if (!!value && value.length > 0) {
+        embed.addFields({
+          name: `⚠️ ${key.charAt(0).toUpperCase() + key.slice(1)} Interactions`,
+          value: value.join(', '),
+          inline: true
+        });
+      }
+    });
+
+    // Add subjective effects
+    if (!!info.subjective_effects && info.subjective_effects.length > 0) {
+      embed.addFields({ name: '🌈 Subjective Effects', value: info.subjective_effects.join(', '), inline: false });
+    }
+
+    // Add tolerance information
+    let toleranceInfo = '';
+    Object.entries(!!info.tolerance ?? {}).forEach(([key, value]) => {
+      if (value) {
+        toleranceInfo += `**${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${Array.isArray(value) ? value.join(', ') : value}\n`;
+      }
+    });
+    if (toleranceInfo !== '') {
+      embed.addFields({ name: '📈 Tolerance', value: toleranceInfo, inline: false });
+    }
+
+    // Add additional fields if available
     if (info.notes) embed.addFields({ name: '📝 Notes', value: info.notes, inline: false });
     if (info.half_life) embed.addFields({ name: '(λ) Half-life', value: info.half_life, inline: true });
-    if (info.trip_reports !== "") embed.addFields({ name: '🌀 Trip Reports', value: info.trip_reports, inline: false })
-    if (info.trip_reports !== "") embed.addFields({ name: '‎', value: "> Read more on [Bluelight.org](https://bluelight.org)", inline: false })
+    if (info.trip_reports) {
+      embed.addFields({ name: '🌀 Trip Reports', value: info.trip_reports.split('\n').slice(0, 3).join('\n'), inline: false });
+      embed.addFields({ name: '‎', value: "> Read more on [Bluelight.org](https://bluelight.org)", inline: false });
+    }
+
+    embed.setFooter({ text: 'Data provided by PsyAI - Use responsibly' })
+      .setTimestamp();
+
     return [embed, interaction];
   } catch (error) {
     console.error(`Error creating drug info embed: ${error}`);
@@ -112,57 +163,57 @@ export async function createOptimizedDrugInfoEmbed(interaction: Discord.CommandI
   }
 }
 
-function createDosageFields(info: DrugInfo) {
-  let fields_final = info.dosages.routes_of_administration.flatMap(route => {
-    const fields = [];
-    let doseList = ``;
+// function createDosageFields(info: DrugInfo) {
+//   const fields_final = info.dosages.routes_of_administration.flatMap(route => {
+//     const fields = [];
+//     let doseList = ``;
 
-    for (const [range, dose] of Object.entries(route.dose_ranges)) {
-      if (dose) {
-        doseList += `> **${range.charAt(0).toUpperCase() + range.slice(1)}:** ${dose}\n`;
-      }
-    }
+//     for (const [range, dose] of Object.entries(route.dose_ranges)) {
+//       if (dose) {
+//         doseList += `> **${range.charAt(0).toUpperCase() + range.slice(1)}:** ${dose}\n`;
+//       }
+//     }
 
-    fields.push({ name: `**ROA: (${route.route})**`, value: doseList, inline: true });
+//     fields.push({ name: `⚖️ **ROA: (${route.route})**`, value: doseList, inline: true });
 
-    return fields;
-  });
-  while (fields_final.length < info.dosages.routes_of_administration.length) {
-    fields_final.push({ name: '\u200B', value: '\u200B', inline: true });
-  }
-  return fields_final;
-}
+//     return fields;
+//   });
+//   while (fields_final.length < info.dosages.routes_of_administration.length) {
+//     fields_final.push({ name: '\u200B', value: '\u200B', inline: true });
+//   }
+//   return fields_final;
+// }
 
-function createDurationFields(info: DrugInfo) {
-  let durationList = '';
-  for (const [key, value] of Object.entries(info.duration)) {
-    if (value) {
-      durationList += `> **${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${value}\n`;
-    }
-  }
-  return [{ name: '⏱️ Duration', value: durationList, inline: false }];
-}
+// function createDurationFields(info: DrugInfo) {
+//   let durationList = '';
+//   for (const [key, value] of Object.entries(info.duration)) {
+//     if (value) {
+//       durationList += `> **${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${value}\n`;
+//     }
+//   }
+//   return [{ name: '⏱️ Duration', value: durationList, inline: false }];
+// }
 
-function createInteractionFields(info: DrugInfo) {
-  return Object.entries(info.interactions)
-    .filter(([_, value]) => value.length > 0)
-    .map(([key, value]) => ({
-      name: `${key.charAt(0).toUpperCase() + key.slice(1)} Interactions`,
-      value: value.map(item => `> ${item}`).join('\n'),
-      inline: true
-    }));
-}
+// function createInteractionFields(info: DrugInfo) {
+//   return Object.entries(info.interactions)
+//     .filter(([_, value]) => value.length > 0)
+//     .map(([key, value]) => ({
+//       name: `⚠️ (${key.charAt(0).toUpperCase() + key.slice(1)}) Interactions`,
+//       value: value.map(item => `> ${item}`).join('\n'),
+//       inline: true
+//     }));
+// }
 
-function createToleranceFields(info: DrugInfo) {
-  let toleranceList = '';
-  for (const [key, value] of Object.entries(info.tolerance)) {
-    if (value) {
-      toleranceList += `> **${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${Array.isArray(value) ? value.join(', ') : value
-        }\n`;
-    }
-  }
-  return [{ name: 'Tolerance', value: toleranceList, inline: false }];
-}
+// function createToleranceFields(info: DrugInfo) {
+//   let toleranceList = '';
+//   for (const [key, value] of Object.entries(info.tolerance)) {
+//     if (value) {
+//       toleranceList += `> **${key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}:** ${Array.isArray(value) ? value.join(', ') : value
+//         }\n`;
+//     }
+//   }
+//   return [{ name: '📈 Tolerance', value: toleranceList, inline: false }];
+// }
 
 function createErrorEmbed(substanceName: string): Discord.EmbedBuilder {
   return new EmbedBuilder()
@@ -186,7 +237,6 @@ export const applicationCommandData = new SlashCommandBuilder()
 export async function performInteraction(interaction: Discord.CommandInteraction) {
   try {
     const discordUserId = interaction.user.id;
-    const user_association = await getUserAssociation(discordUserId);
     const user_disclaimer = await getUserDisclaimerStatus(discordUserId);
 
     if (bannedUsers.includes(discordUserId)) {
@@ -225,10 +275,6 @@ export async function performInteraction(interaction: Discord.CommandInteraction
     if (!!interaction.guild == false) {
       await interaction.deferReply();
       await interaction.editReply("PsyAI currently does not support interaction via direct messages. Please contact @sernyl for more information.");
-      return;
-    }
-
-    if (!user_association) {
       return;
     }
 

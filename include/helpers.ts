@@ -19,8 +19,8 @@ export function splitTextIntoParagraphs(text, maxChunkSize) {
   return chunks;
 }
 
-export function splitTextIntoSections(text) {
-  return text.split(/###\s/).filter(section => section.trim() !== '');
+export function splitTextIntoSections(text, forum = false) {
+  return forum ? text.split(/\n\s/).filter(section => section.trim() !== '') : text.split(/###\s/).filter(section => section.trim() !== '');
 }
 
 export function constants(name) {
